@@ -1,0 +1,32 @@
+name: Sync tiles
+on:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: '52 2 * * *'
+jobs:
+  sync:
+    timeout-minutes: 18
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        ref: master
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 18
+        cache: 'npm'
+    - name: Install dependencies
+      run: npm install
+    - name: Run script
+      run: node sync.js
+      timeout-minutes: 30
+      env:
+        META_PATH: ${{ secrets.META_PATH }}
+        ROOT_PATH: ${{ secrets.ROOT_PATH }}
+        ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
+        ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY_ID }}
+        SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS_KEY }}
+        BUCKET_NAME: ${{ secrets.BUCKET_NAME }}

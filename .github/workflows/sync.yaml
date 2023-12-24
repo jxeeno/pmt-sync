@@ -11,10 +11,7 @@ jobs:
     timeout-minutes: 18
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 1
-        ref: master
+    - uses: actions/checkout@v3
     - uses: actions/setup-node@v4
       with:
         node-version: 18

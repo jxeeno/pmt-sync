@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import fetch from 'node-fetch';
+import * as async from 'async';
 
 import { S3Client, CreateMultipartUploadCommand, CompleteMultipartUploadCommand, UploadPartCommand } from "@aws-sdk/client-s3";
 
@@ -41,33 +42,45 @@ async function sync() {
     console.log(`Upload ID: ${multiPartUpload.UploadId}`);
 
     let parts = [];
+    let reqParts = [];
     for (let i = 0; i < chunks; i++) {
-        console.time(`chunk ${i}/${chunks}`);
         const start = i * multipartLimit;
         const end = Math.min(contentLength, (i + 1) * multipartLimit) - 1;
-        console.log(`* fetch chunk ${i}/${chunks}: ${start}-${end}`);
+
+        reqParts.push({
+            i,
+            reqHeaders: {
+                range: `bytes=${start}-${end}`
+            },
+            s3Params: {
+                PartNumber: i + 1,
+                ContentLength: end - start + 1
+            }
+        })
+    }
+
+    await async.mapLimit(reqParts, 10, async ({ i, reqHeaders, s3Params }) => {
+        console.time(`chunk ${i}/${chunks}`);
+        console.log(`* fetch chunk ${i}/${chunks}: ${reqHeaders.range}`);
 
         const resp = await fetch(srcPmt, {
-            headers: {
-                range: `bytes=${start}-${end}`
-            }
+            headers: reqHeaders
         });
 
-        console.log(`* uploading chunk ${i}/${chunks}: ${start}-${end}`);
+        console.log(`* uploading chunk ${i}/${chunks}: ${reqHeaders.range}`);
         const s3Req = new UploadPartCommand({
             Bucket: process.env.BUCKET_NAME,
             Key: key,
-            PartNumber: i + 1,
             UploadId: multiPartUpload.UploadId,
             Body: resp.body,
-            ContentLength: end - start + 1
+            ...s3Params
         });
         const uploadedPart = await S3.send(s3Req);
 
-        console.log(`* uploaded ${i}/${chunks}: ${start}-${end}`);
+        console.log(`* uploaded ${i}/${chunks}: ${reqHeaders.range}`);
         parts.push({ ETag: uploadedPart.ETag, PartNumber: i + 1 });
         console.timeEnd(`chunk ${i}/${chunks}`);
-    }
+    });
 
     console.log(parts);
     console.log(`completing...`);

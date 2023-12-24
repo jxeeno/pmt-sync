@@ -8,7 +8,7 @@ on:
     - cron: '52 2 * * *'
 jobs:
   sync:
-    timeout-minutes: 18
+    timeout-minutes: 120
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -20,7 +20,7 @@ jobs:
       run: npm install
     - name: Run script
       run: node sync.js
-      timeout-minutes: 30
+      timeout-minutes: 120
       env:
         META_PATH: ${{ secrets.META_PATH }}
         ROOT_PATH: ${{ secrets.ROOT_PATH }}

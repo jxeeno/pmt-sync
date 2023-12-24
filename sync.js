@@ -19,7 +19,7 @@ async function sync() {
     const key = `oss/planet/${lastMap.uploaded.substr(0, 10)}.pmt`;
     const srcPmt = process.env.ROOT_PATH + lastMap.key;
 
-    const multipartLimit = 1024 * 1024 * 1024; // 1GB chunks
+    const multipartLimit = 1024 * 1024 * 256; // 1GB chunks
     const headResp = await fetch(srcPmt, {
         method: 'HEAD'
     });
@@ -59,7 +59,7 @@ async function sync() {
         })
     }
 
-    await async.mapLimit(reqParts, 10, async ({ i, reqHeaders, s3Params }) => {
+    await async.mapLimit(reqParts, 5, async ({ i, reqHeaders, s3Params }) => {
         console.time(`chunk ${i}/${chunks}`);
         console.log(`* fetch chunk ${i}/${chunks}: ${reqHeaders.range}`);
 
